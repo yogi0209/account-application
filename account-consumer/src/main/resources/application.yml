@@ -1,0 +1,13 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/account
+    username: transaction-manager
+    password: ******
+  application:
+    name: account-consumer
+logging:
+  level:
+    org.hibernate.SQL: debug
+    org.hibernate.orm.jdbc.bind: trace
+  file:
+    name: application.log
