@@ -13,3 +13,6 @@ logging:
     org.hibernate.orm.jdbc.bind: trace
   file:
     name: application.log
+otel:
+  trace:
+    endpoint: http://localhost:4318/v1/traces

@@ -6,11 +6,15 @@ import com.yogendra.entity.Account;
 import com.yogendra.requests.BalanceAction;
 import com.yogendra.requests.UpdateBalance;
 import com.yogendra.util.Amount;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.context.Context;
+import io.opentelemetry.context.Scope;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.Optional;
 
 @Service
@@ -24,7 +28,7 @@ public class AccountService {
     }
 
     @Transactional(isolation = Isolation.REPEATABLE_READ)
-    public void updateBalance(UpdateBalance updateBalance) {
+    public void updateBalance(UpdateBalance updateBalance, Span span) throws InterruptedException {
         Optional<Account> optionalAccount = accountDao.findById(updateBalance.getAccountNumber());
         if (optionalAccount.isPresent()) {
             Account account = optionalAccount.get();
@@ -33,7 +37,9 @@ public class AccountService {
             Amount updatedAmount = balanceAction.apply(account.getBalance(), Amount.valueOf(updateBalance.getAmount()));
             account.setBalance(updatedAmount);
             accountDao.save(account);
+            span.addEvent("balance-update-complete", Instant.now());
             logger.info("Balance of {} after {}{} is {}", account.getAccountNumber(), updateBalance.getAmount(), balanceAction, updatedAmount);
+            span.end();
         }
     }
 }

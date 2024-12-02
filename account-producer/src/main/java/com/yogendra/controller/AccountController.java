@@ -5,7 +5,10 @@ import com.yogendra.entity.Account;
 import com.yogendra.requests.UpdateBalance;
 import com.yogendra.service.AccountService;
 import com.yogendra.util.Amount;
-import lombok.extern.slf4j.Slf4j;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.SpanKind;
+import io.opentelemetry.api.trace.Tracer;
+import io.opentelemetry.sdk.OpenTelemetrySdk;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -13,17 +16,19 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
 
-@Slf4j
+
 @RestController
 @RequestMapping("accounts")
 public class AccountController {
 
     private final Logger logger = (Logger) LoggerFactory.getLogger(getClass());
     private final AccountService accountService;
+    private final OpenTelemetrySdk openTelemetrySdk;
 
 
-    public AccountController(AccountService accountService) {
+    public AccountController(AccountService accountService, OpenTelemetrySdk openTelemetrySdk) {
         this.accountService = accountService;
+        this.openTelemetrySdk = openTelemetrySdk;
     }
 
     @PostMapping
@@ -41,6 +46,13 @@ public class AccountController {
 
     @PatchMapping("balance")
     public void UpdateBalance(@RequestBody UpdateBalance updateBalance) {
-        accountService.updateBalance(updateBalance);
+        Tracer tracer = openTelemetrySdk.getTracer("balance-update");
+        Span span = tracer
+                .spanBuilder("balance-update-producer")
+                .setSpanKind(SpanKind.PRODUCER)
+                .startSpan();
+        logger.info("Span {}", span.getSpanContext().getSpanId());
+        logger.info("Trace {}", span.getSpanContext().getTraceId());
+        accountService.updateBalance(updateBalance, span);
     }
 }
