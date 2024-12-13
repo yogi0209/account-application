@@ -7,8 +7,6 @@ import com.yogendra.requests.BalanceAction;
 import com.yogendra.requests.UpdateBalance;
 import com.yogendra.util.Amount;
 import io.opentelemetry.api.trace.Span;
-import io.opentelemetry.context.Context;
-import io.opentelemetry.context.Scope;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
@@ -37,8 +35,8 @@ public class AccountService {
             Amount updatedAmount = balanceAction.apply(account.getBalance(), Amount.valueOf(updateBalance.getAmount()));
             account.setBalance(updatedAmount);
             accountDao.save(account);
-            span.addEvent("balance-update-complete", Instant.now());
             logger.info("Balance of {} after {}{} is {}", account.getAccountNumber(), updateBalance.getAmount(), balanceAction, updatedAmount);
+            span.addEvent("balance-update-complete", Instant.now());
             span.end();
         }
     }
