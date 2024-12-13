@@ -15,7 +15,7 @@ Sample account transfer request:
  {
     "accountNumber":"68123978",
     "amount":"100",
-    "action": "+/-"
+    "action": "+"
 }
  ```
 Required table schema:
