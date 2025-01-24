@@ -1,12 +1,10 @@
 spring:
-  datasource:
-    url: jdbc:postgresql://localhost:5432/account
-    username: transaction-manager
-    password: tx135!@#$
   application:
-    name: account-consumer
-  main:
-    banner-mode: off
+    name: account-consumer-reactive
+  r2dbc:
+    url: r2dbc:postgresql://localhost:5432/account
+    password: tx135!@#$
+    username: transaction-manager
 logging:
   level:
     org.hibernate.SQL: debug

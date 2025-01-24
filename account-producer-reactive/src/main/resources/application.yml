@@ -1,0 +1,18 @@
+spring:
+  application:
+    name: account-producer-reactive
+  r2dbc:
+    url: r2dbc:postgresql://localhost:5432/account
+    password: tx135!@#$
+    username: transaction-manager
+server:
+  port: 7575
+otel:
+  trace:
+    endpoint: http://localhost:4318/v1/traces
+logging:
+  level:
+    org.hibernate.SQL: debug
+    org.hibernate.orm.jdbc.bind: trace
+  file:
+    name: application.log

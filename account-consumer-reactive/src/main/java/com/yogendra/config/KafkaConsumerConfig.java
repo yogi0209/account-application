@@ -31,7 +31,7 @@ public class KafkaConsumerConfig {
         ConcurrentKafkaListenerContainerFactory<Object, Object> factory = new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(consumerFactory());
         factory.getContainerProperties().setObservationEnabled(true);
-        factory.getContainerProperties().setIdleBetweenPolls(1000);
+        factory.getContainerProperties().setIdleBetweenPolls(5000);
         return factory;
     }
 

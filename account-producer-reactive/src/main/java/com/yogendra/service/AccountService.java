@@ -6,7 +6,6 @@ import com.yogendra.entity.Account;
 import com.yogendra.requests.BalanceAction;
 import com.yogendra.requests.SpanContextAndUpdateBalanceCarrier;
 import com.yogendra.requests.UpdateBalance;
-import com.yogendra.util.Amount;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator;
 import io.opentelemetry.context.Context;
@@ -15,11 +14,10 @@ import io.opentelemetry.context.propagation.TextMapPropagator;
 import org.slf4j.LoggerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
+import reactor.core.publisher.Mono;
 
 import java.time.Instant;
-import java.util.Optional;
 
 
 @Service
@@ -35,14 +33,17 @@ public class AccountService {
     );
 
 
-    public AccountService(AccountDao accountDao, KafkaTemplate<String, Object> kafkaTemplate) {
-        this.accountDao = accountDao;
+    public AccountService(KafkaTemplate<String, Object> kafkaTemplate, AccountDao accountDao) {
         this.kafkaTemplate = kafkaTemplate;
+        this.accountDao = accountDao;
     }
 
-    @Transactional
-    public Account save(Account account) {
+    public Mono<Account> save(Account account) {
         return accountDao.save(account);
+    }
+
+    public Mono<Account> fetchAccountById(String accountId) {
+        return accountDao.findById(accountId);
     }
 
     public void updateBalance(UpdateBalance updateBalance, Span span) {
@@ -60,18 +61,16 @@ public class AccountService {
     }
 
     @Transactional
-    public void updateBalanceV2(UpdateBalance updateBalance, Span span) throws InterruptedException {
-        Optional<Account> optionalAccount = accountDao.findById(updateBalance.getAccountNumber());
-        if (optionalAccount.isPresent()) {
-            Account account = optionalAccount.get();
+    public Mono<Account> updateBalanceV2(UpdateBalance updateBalance, Span span) {
+        return accountDao.findById(updateBalance.getAccountNumber()).flatMap(account -> {
             logger.info("Current Balance of {} is {}", account.getAccountNumber(), account.getBalance());
             BalanceAction balanceAction = BalanceAction.fromString(updateBalance.getAction());
-            Amount updatedAmount = balanceAction.apply(account.getBalance(), Amount.valueOf(updateBalance.getAmount()));
+            Double updatedAmount = balanceAction.apply(account.getBalance(), Double.valueOf(updateBalance.getAmount()));
             account.setBalance(updatedAmount);
-            accountDao.save(account);
-            logger.info("Balance of {} after {}{} is {}", account.getAccountNumber(), updateBalance.getAmount(), balanceAction, updatedAmount);
-            span.addEvent("balance-update-complete", Instant.now());
-            span.end();
-        }
+            return accountDao.save(account).doOnNext(updatedAccount -> {
+                logger.info("Balance of {} after {}{} is {}", updatedAccount.getAccountNumber(), updateBalance.getAmount(), balanceAction, updatedAmount);
+                span.end();
+            });
+        });
     }
 }

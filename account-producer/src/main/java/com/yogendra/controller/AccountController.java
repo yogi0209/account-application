@@ -51,8 +51,16 @@ public class AccountController {
                 .spanBuilder("balance-update-producer")
                 .setSpanKind(SpanKind.PRODUCER)
                 .startSpan();
-        logger.info("Span {}", span.getSpanContext().getSpanId());
-        logger.info("Trace {}", span.getSpanContext().getTraceId());
         accountService.updateBalance(updateBalance, span);
+    }
+
+    @PatchMapping("v2/balance")
+    public void UpdateBalanceV2(@RequestBody UpdateBalance updateBalance) throws InterruptedException {
+        Tracer tracer = openTelemetrySdk.getTracer("balance-update");
+        Span span = tracer
+                .spanBuilder("balance-update-producer")
+                .setSpanKind(SpanKind.PRODUCER)
+                .startSpan();
+        accountService.updateBalanceV2(updateBalance, span);
     }
 }

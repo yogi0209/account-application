@@ -4,9 +4,11 @@ spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/account
     username: transaction-manager
-    password: ******
+    password: tx135!@#$
   application:
     name: account-producer
+  main:
+    banner-mode: off
 logging:
   level:
     org.hibernate.SQL: debug
